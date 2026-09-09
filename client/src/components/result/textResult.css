@@ -1,0 +1,44 @@
+ * Normal text response */
+
+.text-result {
+  background: white;
+
+  padding: 25px;
+
+  border-radius: 18px;
+
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.07);
+
+  line-height: 1.7;
+
+  font-size: 16px;
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+  .app-container {
+    margin: 20px auto;
+    padding: 12px;
+  }
+
+  .input-card,
+  .question-card {
+    padding: 18px;
+  }
+
+  .controls {
+    flex-direction: column;
+  }
+
+  .submit-btn {
+    width: 100%;
+  }
+
+  .question {
+    font-size: 18px;
+  }
+
+}

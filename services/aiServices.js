@@ -49,7 +49,30 @@ async function generateAIResponse(mode, userInput) {
       }
 );
      const data = await response.json();
+
+     if (!response.ok) {
+        console.error("Gemini API Error:", data);
+
+        throw new Error(
+           data?.error?.message ||
+          `Gemini API request failed with status ${response.status}`
+        );
+      }
+
+
+      if (!data?.candidates?.length) {
+         console.error("Unexpected Gemini response:", data);
+
+         throw new Error("Gemini returned no candidates.");
+      }
+
      const answer = data.candidates[0].content.parts[0].text;
+      if (!answer) {
+         console.error("Unexpected Gemini response:", data);
+
+         throw new Error("Gemini returned an empty response.");
+      }
+
      return answer;
 }
 

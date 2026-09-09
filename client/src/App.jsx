@@ -1,4 +1,12 @@
  import { useState } from "react";
+ import "./App.css";
+
+ import InputCard from "./components/inputCard/inputCard";
+ import Quiz from "./components/quiz/quiz";
+ import TextResult from "./components/result/textResult";
+
+ import {generateAIResponse} from "./services/aiServices";
+
 
 function App() {
 
@@ -6,85 +14,77 @@ function App() {
       const[mode,setMode] = useState('explain');
       const[resData,setResData] = useState('');
       const[isWaiting,setIsWaiting] = useState(false);
+      const [selectedAnswers, setSelectedAnswers] = useState({});
 
-      function handleTextChange(e) {
-          setTextArea(e.target.value);
-      }
-
-      function handleModeChange(e) {
-        setMode(e.target.value);
-      }
+     
 
       async function handleSubmit(e) {
         e.preventDefault();
-        setIsWaiting(true);
-        const prompt = textArea;
-        const response = await fetch('http://localhost:5000/api/ai/generate', {
-          method : 'POST',
-          headers : {
-            'Content-Type' : 'application/json',
-          },
-          body : JSON.stringify({prompt,mode})
-        });
-        const data = await response.json();
-        setResData(data);
-        if(response.status != 200) { 
-          alert(data.message);
-          setIsWaiting(false);
+
+        if(!textArea.trim()) {
+          alert("Please enter something first.");
           return;
         }
-        if(mode == "mcq") {
-          try{
-            const res_mcq = JSON.parse(data.result);
-            setResData({ ...data, result: res_mcq.questions });
-          } catch(err) {
-            alert(err);
-            setIsWaiting(false);
-            return;
+
+        setIsWaiting(true);
+        setResData(null);
+
+        try {
+          const data = await generateAIResponse(textArea, mode);
+
+          if(mode === "mcq") {
+            const mcqData = JSON.parse(data.result);
+
+            setResData({
+               ...data,
+               result: mcqData.questions
+            });
+          } else {
+            setResData(data);
           }
+        } catch(err) {
+          alert(err.message);
+        } finally {
+          setIsWaiting(false);
         }
-        setIsWaiting(false);
-      }
+  }   
+
+      const handleAnswer = (questionIndex, option) => {
+          setSelectedAnswers(prev => ({
+             ...prev,
+             [questionIndex]: option
+            }));
+      };
 
       return(
-        <div>
-          
-          <textarea value={textArea} onChange={handleTextChange} placeholder="Type your question or text here...." />
+        <div className="app-container">
 
-           <select value={mode} onChange={handleModeChange}>
-                   <option value="explain"> Explain a concept </option>
-                   <option value="summarize"> Summarize a concept </option>
-                   <option value="improve"> Improve a concept </option>
-                   <option value="mcq"> mcq </option>
-           </select>
+         <InputCard 
+               textArea={textArea}
+               setTextArea={setTextArea}
+               mode={mode}
+               setMode={setMode}
+               handleSubmit={handleSubmit}
+               isWaiting={isWaiting}
+         />
 
-           <button onClick={handleSubmit} disabled={isWaiting}>
-            {isWaiting ? "Generating..." : "Submit"}
-           </button>
 
-           {isWaiting && <p>The result is on the way...</p> }
-           {!isWaiting && resData.result && (
-  Array.isArray(resData.result) ? (
-    <div>
-      {resData.result.map((q, index) => (
-        <div key={index}>
-          <p>{q.question}</p>
-          <ul>
-            {q.options.map((opt, i) => (
-              <li key={i}>{opt}</li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <p>{resData.result}</p>
-  )
-)}
-          
-        </div>
-          
-          )
+  {!isWaiting && resData?.result && (
+    Array.isArray(resData.result) ? (
+         <Quiz 
+             questions={resData.result}
+             selectedAnswers={selectedAnswers}
+             handleAnswer={handleAnswer}
+        />
+     ) : (
+                  <TextResult result={resData.result} />
+         )
+
+     )}
+      
+</div>
+        
+  );
 
 }
 
